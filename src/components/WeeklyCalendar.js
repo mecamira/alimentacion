@@ -314,12 +314,37 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
 
       {/* Modal para añadir comida */}
       {showAddMealModal && (
-        <AddMealModal
-          selectedSlot={selectedSlot}
-          pantryItems={pantryItems}
-          onClose={handleCloseModal}
-          onRefresh={onRefresh}
-        />
+        <>
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 0, 0, 0.5)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '10px',
+              boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+              zIndex: 1000000
+            }}>
+              <h2>MODAL TEST - ¿Me ves?</h2>
+              <button onClick={handleCloseModal}>Cerrar</button>
+            </div>
+          </div>
+          <AddMealModal
+            selectedSlot={selectedSlot}
+            pantryItems={pantryItems}
+            onClose={handleCloseModal}
+            onRefresh={onRefresh}
+          />
+        </>
       )}
     </div>
   );
