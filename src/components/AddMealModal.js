@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, X, Clock, ChefHat } from 'lucide-react';
 import { mealService } from '../services/firebaseService';
+import { createPortal } from 'react-dom';
 
 const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
   const [meal, setMeal] = useState({
@@ -20,6 +21,27 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
     quantity: 1,
     unit: 'unidades'
   });
+
+  // Prevent body scroll when modal is open
+  React.useEffect(() => {
+    document.body.classList.add('modal-open');
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
+  // Handle ESC key to close modal
+  React.useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.keyCode === 27) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [onClose]);
 
   const mealTypes = ['Desayuno', 'Almuerzo', 'Cena', 'Merienda'];
   const difficulties = ['Muy Fácil', 'Fácil', 'Intermedio', 'Difícil', 'Muy Difícil'];
@@ -110,7 +132,7 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
     });
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -121,7 +143,7 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
           <p>
             {formatDateForDisplay(meal.date)} - {meal.mealType}
           </p>
-          <button onClick={onClose} className="modal-close-button">
+          <button onClick={onClose} className="modal-close-button" type="button">
             <X size={20} />
           </button>
         </div>
@@ -335,7 +357,8 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
