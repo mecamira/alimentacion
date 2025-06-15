@@ -13,6 +13,16 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
+// Debug: verificar que las variables estén cargadas
+console.log('Firebase Config:', {
+  apiKey: firebaseConfig.apiKey ? '***configured***' : 'MISSING',
+  authDomain: firebaseConfig.authDomain || 'MISSING',
+  projectId: firebaseConfig.projectId || 'MISSING',
+  storageBucket: firebaseConfig.storageBucket || 'MISSING',
+  messagingSenderId: firebaseConfig.messagingSenderId || 'MISSING',
+  appId: firebaseConfig.appId ? '***configured***' : 'MISSING'
+});
+
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 

@@ -141,11 +141,17 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
 
   // Manejar click en slot vacío para añadir comida
   const handleEmptySlotClick = (date, mealType) => {
-    setSelectedSlot({
-      date: date.toISOString().split('T')[0],
-      mealType: mealType
-    });
-    setShowAddMealModal(true);
+    console.log('Clicked to add meal:', { date: date.toISOString().split('T')[0], mealType });
+    try {
+      setSelectedSlot({
+        date: date.toISOString().split('T')[0],
+        mealType: mealType
+      });
+      setShowAddMealModal(true);
+      console.log('Modal should be opening...');
+    } catch (error) {
+      console.error('Error opening modal:', error);
+    }
   };
 
   // Cerrar modal
