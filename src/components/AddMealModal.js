@@ -1,8 +1,9 @@
 // src/components/AddMealModal.js
 // Modal para añadir comidas directamente desde el calendario
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, X, Clock, ChefHat } from 'lucide-react';
 import { mealService } from '../services/firebaseService';
+import ReactDOM from 'react-dom';
 
 const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
   const [meal, setMeal] = useState({
@@ -22,7 +23,7 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
   });
 
   // Prevent body scroll when modal is open
-  React.useEffect(() => {
+  useEffect(() => {
     document.body.classList.add('modal-open');
     return () => {
       document.body.classList.remove('modal-open');
@@ -30,7 +31,7 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
   }, []);
 
   // Handle ESC key to close modal
-  React.useEffect(() => {
+  useEffect(() => {
     const handleEsc = (event) => {
       if (event.keyCode === 27) {
         onClose();
@@ -41,6 +42,22 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
       document.removeEventListener('keydown', handleEsc);
     };
   }, [onClose]);
+
+  // Create portal element
+  const [portalElement] = useState(() => {
+    const element = document.createElement('div');
+    element.id = 'modal-portal';
+    return element;
+  });
+
+  useEffect(() => {
+    document.body.appendChild(portalElement);
+    return () => {
+      if (document.body.contains(portalElement)) {
+        document.body.removeChild(portalElement);
+      }
+    };
+  }, [portalElement]);
 
   const mealTypes = ['Desayuno', 'Almuerzo', 'Cena', 'Merienda'];
   const difficulties = ['Muy Fácil', 'Fácil', 'Intermedio', 'Difícil', 'Muy Difícil'];
@@ -131,7 +148,7 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
     });
   };
 
-  return (
+  return ReactDOM.createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -356,7 +373,8 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    portalElement
   );
 };
 
