@@ -9,6 +9,21 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isMobileView, setIsMobileView] = useState(false);
+  
+  // Estado del formulario del modal
+  const [modalMeal, setModalMeal] = useState({
+    name: '',
+    description: '',
+    ingredients: [],
+    preparationTime: 30,
+    difficulty: 'Fácil'
+  });
+  
+  const [newIngredient, setNewIngredient] = useState({
+    name: '',
+    quantity: 1,
+    unit: 'unidades'
+  });
 
   // Detectar si estamos en móvil
   React.useEffect(() => {
@@ -113,6 +128,8 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
   const weekDays = getWeekDays();
   const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const mealTypes = ['Desayuno', 'Almuerzo', 'Cena'];
+  const difficulties = ['Muy Fácil', 'Fácil', 'Intermedio', 'Difícil', 'Muy Difícil'];
+  const units = ['unidades', 'kg', 'g', 'l', 'ml', 'cucharadas', 'cucharaditas', 'tazas', 'pizca'];
 
   // Navegar semanas
   const navigateWeek = (direction) => {
@@ -158,6 +175,90 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
   const handleCloseModal = () => {
     setShowAddMealModal(false);
     setSelectedSlot(null);
+    // Resetear formulario
+    setModalMeal({
+      name: '',
+      description: '',
+      ingredients: [],
+      preparationTime: 30,
+      difficulty: 'Fácil'
+    });
+    setNewIngredient({
+      name: '',
+      quantity: 1,
+      unit: 'unidades'
+    });
+  };
+
+  // Añadir ingrediente
+  const handleAddIngredient = () => {
+    if (newIngredient.name.trim() && newIngredient.quantity > 0) {
+      setModalMeal({
+        ...modalMeal,
+        ingredients: [...modalMeal.ingredients, { ...newIngredient }]
+      });
+      setNewIngredient({
+        name: '',
+        quantity: 1,
+        unit: 'unidades'
+      });
+    }
+  };
+
+  // Eliminar ingrediente
+  const handleRemoveIngredient = (index) => {
+    setModalMeal({
+      ...modalMeal,
+      ingredients: modalMeal.ingredients.filter((_, i) => i !== index)
+    });
+  };
+
+  // Verificar disponibilidad de ingredientes
+  const checkIngredientAvailability = (ingredient) => {
+    const pantryItem = pantryItems.find(item => 
+      item.name.toLowerCase() === ingredient.name.toLowerCase()
+    );
+    
+    if (!pantryItem) return { status: 'missing', available: 0 };
+    if (pantryItem.quantity >= ingredient.quantity) return { status: 'available', available: pantryItem.quantity };
+    return { status: 'insufficient', available: pantryItem.quantity };
+  };
+
+  // Guardar comida
+  const handleSaveMeal = async () => {
+    if (!modalMeal.name.trim()) {
+      alert('Por favor, introduce un nombre para la comida');
+      return;
+    }
+
+    try {
+      const mealToSave = {
+        name: modalMeal.name,
+        date: selectedSlot.date,
+        mealType: selectedSlot.mealType,
+        description: modalMeal.description,
+        ingredients: modalMeal.ingredients,
+        preparationTime: modalMeal.preparationTime,
+        difficulty: modalMeal.difficulty
+      };
+
+      await mealService.addMeal(mealToSave);
+      onRefresh();
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error saving meal:', error);
+      alert('Error al guardar la comida');
+    }
+  };
+
+  // Autocompletar ingredientes
+  const getSuggestedIngredients = () => {
+    return pantryItems
+      .filter(item => 
+        item.name.toLowerCase().includes(newIngredient.name.toLowerCase()) &&
+        newIngredient.name.length > 0
+      )
+      .slice(0, 5);
   };
 
   // Completar comida
@@ -377,32 +478,276 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
               </button>
             </div>
             
-            {/* Simple form */}
+            {/* Formulario completo */}
             <div>
+              {/* Nombre de la comida */}
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>Nombre de la comida:</label>
+                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>Nombre de la comida *</label>
                 <input 
                   type="text" 
                   placeholder="Ej: Pasta con tomate"
+                  value={modalMeal.name}
+                  onChange={(e) => setModalMeal({...modalMeal, name: e.target.value})}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
                     border: '1px solid #e2e8f0',
                     borderRadius: '8px',
-                    fontSize: '1rem'
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
               
+              {/* Tiempo y dificultad */}
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>⏱️ Tiempo (min)</label>
+                  <input 
+                    type="number" 
+                    value={modalMeal.preparationTime}
+                    onChange={(e) => setModalMeal({...modalMeal, preparationTime: parseInt(e.target.value) || 0})}
+                    min="1"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>Dificultad</label>
+                  <select 
+                    value={modalMeal.difficulty}
+                    onChange={(e) => setModalMeal({...modalMeal, difficulty: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    {difficulties.map(diff => (
+                      <option key={diff} value={diff}>{diff}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              {/* Descripción */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>Descripción (opcional)</label>
+                <textarea 
+                  placeholder="Describe la receta..."
+                  value={modalMeal.description}
+                  onChange={(e) => setModalMeal({...modalMeal, description: e.target.value})}
+                  rows="2"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+              
+              {/* Ingredientes */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{ marginBottom: '1rem', color: '#2d3748' }}>🥘 Ingredientes</h4>
+                
+                {/* Añadir ingrediente */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.5rem', marginBottom: '1rem', alignItems: 'end' }}>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text"
+                      placeholder="Ingrediente"
+                      value={newIngredient.name}
+                      onChange={(e) => setNewIngredient({...newIngredient, name: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    {/* Sugerencias */}
+                    {getSuggestedIngredients().length > 0 && newIngredient.name && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderTop: 'none',
+                        borderRadius: '0 0 8px 8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        zIndex: 10,
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                      }}>
+                        {getSuggestedIngredients().map(item => (
+                          <div
+                            key={item.id}
+                            style={{
+                              padding: '0.75rem',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f1f5f9',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f7fafc'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                            onClick={() => setNewIngredient({
+                              ...newIngredient,
+                              name: item.name,
+                              unit: item.unit
+                            })}
+                          >
+                            <span style={{ fontWeight: '500', color: '#2d3748' }}>{item.name}</span>
+                            <span style={{ fontSize: '0.875rem', color: '#718096' }}>({item.quantity} {item.unit})</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="number"
+                    placeholder="Cantidad"
+                    value={newIngredient.quantity}
+                    onChange={(e) => setNewIngredient({...newIngredient, quantity: parseFloat(e.target.value) || 0})}
+                    min="0.1"
+                    step="0.1"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <select 
+                    value={newIngredient.unit}
+                    onChange={(e) => setNewIngredient({...newIngredient, unit: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    {units.map(unit => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
+                  <button 
+                    type="button"
+                    onClick={handleAddIngredient}
+                    disabled={!newIngredient.name.trim() || newIngredient.quantity <= 0}
+                    style={{
+                      background: newIngredient.name.trim() && newIngredient.quantity > 0 
+                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                        : '#e2e8f0',
+                      color: newIngredient.name.trim() && newIngredient.quantity > 0 ? 'white' : '#a0aec0',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      cursor: newIngredient.name.trim() && newIngredient.quantity > 0 ? 'pointer' : 'not-allowed',
+                      fontSize: '1.2rem'
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+                
+                {/* Lista de ingredientes */}
+                {modalMeal.ingredients.length > 0 && (
+                  <div>
+                    <h5 style={{ marginBottom: '0.5rem', color: '#4a5568' }}>Ingredientes añadidos:</h5>
+                    {modalMeal.ingredients.map((ingredient, index) => {
+                      const availability = checkIngredientAvailability(ingredient);
+                      return (
+                        <div key={index} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '0.5rem',
+                          border: `1px solid ${
+                            availability.status === 'available' ? '#9ae6b4' : 
+                            availability.status === 'insufficient' ? '#fbb040' : '#fc8181'
+                          }`,
+                          backgroundColor: `${
+                            availability.status === 'available' ? '#f0fff4' : 
+                            availability.status === 'insufficient' ? '#fffbf0' : '#fff5f5'
+                          }`,
+                          borderRadius: '6px',
+                          marginBottom: '0.5rem',
+                          fontSize: '0.875rem'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{ fontWeight: '500', color: '#2d3748' }}>{ingredient.name}</span>
+                            <span style={{ color: '#4a5568' }}>{ingredient.quantity} {ingredient.unit}</span>
+                            <span style={{ 
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              color: availability.status === 'available' ? '#22543d' : 
+                                     availability.status === 'insufficient' ? '#c05621' : '#742a2a'
+                            }}>
+                              {availability.status === 'available' && '✅ Disponible'}
+                              {availability.status === 'insufficient' && `⚠️ Insuficiente (${availability.available} ${ingredient.unit})`}
+                              {availability.status === 'missing' && '❌ No disponible'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveIngredient(index)}
+                            style={{
+                              background: 'none',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '4px',
+                              padding: '0.25rem',
+                              cursor: 'pointer',
+                              color: '#f56565',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              
+              {/* Botones */}
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                 <button 
+                  onClick={handleSaveMeal}
+                  disabled={!modalMeal.name.trim()}
                   style={{
-                    background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
-                    color: 'white',
+                    background: modalMeal.name.trim() 
+                      ? 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)' 
+                      : '#e2e8f0',
+                    color: modalMeal.name.trim() ? 'white' : '#a0aec0',
                     border: 'none',
                     padding: '0.75rem 1.5rem',
                     borderRadius: '8px',
-                    cursor: 'pointer',
+                    cursor: modalMeal.name.trim() ? 'pointer' : 'not-allowed',
                     fontWeight: 'bold',
                     flex: 1
                   }}
