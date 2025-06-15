@@ -314,37 +314,119 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
 
       {/* Modal para añadir comida */}
       {showAddMealModal && (
-        <>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }} onClick={handleCloseModal}>
           <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(255, 0, 0, 0.5)',
-            zIndex: 999999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            zIndex: 1000000
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
             <div style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '10px',
-              boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-              zIndex: 1000000
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              padding: '1.5rem',
+              margin: '-2rem -2rem 1.5rem -2rem',
+              borderRadius: '16px 16px 0 0',
+              position: 'relative'
             }}>
-              <h2>MODAL TEST - ¿Me ves?</h2>
-              <button onClick={handleCloseModal}>Cerrar</button>
+              <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                🍽️ Añadir Comida
+              </h2>
+              <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>
+                {new Date(selectedSlot?.date + 'T00:00:00').toLocaleDateString('es-ES', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })} - {selectedSlot?.mealType}
+              </p>
+              <button 
+                onClick={handleCloseModal} 
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '0.5rem',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Simple form */}
+            <div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>Nombre de la comida:</label>
+                <input 
+                  type="text" 
+                  placeholder="Ej: Pasta con tomate"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button 
+                  style={{
+                    background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    flex: 1
+                  }}
+                >
+                  🍽️ Añadir Comida
+                </button>
+                <button 
+                  onClick={handleCloseModal}
+                  style={{
+                    background: '#e2e8f0',
+                    color: '#4a5568',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
-          <AddMealModal
-            selectedSlot={selectedSlot}
-            pantryItems={pantryItems}
-            onClose={handleCloseModal}
-            onRefresh={onRefresh}
-          />
-        </>
+        </div>
       )}
     </div>
   );
