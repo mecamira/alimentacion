@@ -1,10 +1,25 @@
 // src/components/WeeklyCalendar.js
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Clock, AlertCircle, Plus } from 'lucide-react';
 import { mealService, pantryService } from '../services/firebaseService';
+import AddMealModal from './AddMealModal';
 
 const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [showAddMealModal, setShowAddMealModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  // Detectar si estamos en móvil
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Obtener el lunes de la semana actual
   const getWeekStart = (date) => {
@@ -55,6 +70,21 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
     });
   };
 
+  // Manejar click en slot vacío para añadir comida
+  const handleEmptySlotClick = (date, mealType) => {
+    setSelectedSlot({
+      date: date.toISOString().split('T')[0],
+      mealType: mealType
+    });
+    setShowAddMealModal(true);
+  };
+
+  // Cerrar modal
+  const handleCloseModal = () => {
+    setShowAddMealModal(false);
+    setSelectedSlot(null);
+  };
+
   // Completar comida
   const handleCompleteMeal = async (mealId, meal) => {
     try {
@@ -96,13 +126,16 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
       <div className="calendar-header">
         <div className="week-navigation">
           <button onClick={() => navigateWeek(-1)} className="nav-button">
-            <ChevronLeft size={20} />
+            <ChevronLeft size={isMobileView ? 16 : 20} />
           </button>
           <h2>
-            Semana del {weekDays[0].toLocaleDateString('es-ES')} al {weekDays[6].toLocaleDateString('es-ES')}
+            {isMobileView 
+              ? `${weekDays[0].toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} - ${weekDays[6].toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}`
+              : `Semana del ${weekDays[0].toLocaleDateString('es-ES')} al ${weekDays[6].toLocaleDateString('es-ES')}`
+            }
           </h2>
           <button onClick={() => navigateWeek(1)} className="nav-button">
-            <ChevronRight size={20} />
+            <ChevronRight size={isMobileView ? 16 : 20} />
           </button>
         </div>
       </div>
@@ -136,31 +169,31 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
                       <div className="meal-status">
                         {meal.completed ? (
                           <div className="status-badge completed">
-                            <CheckCircle size={14} />
-                            Completada
+                            <CheckCircle size={isMobileView ? 10 : 14} />
+                            {!isMobileView && 'Completada'}
                           </div>
                         ) : canCookMeal(meal) ? (
                           <div className="meal-actions">
                             <div className="status-badge ready">
-                              <Clock size={14} />
-                              Listo para cocinar
+                              <Clock size={isMobileView ? 10 : 14} />
+                              {!isMobileView && 'Listo para cocinar'}
                             </div>
                             <button 
                               onClick={() => handleCompleteMeal(meal.id, meal)}
                               className="complete-button"
                             >
-                              Marcar como hecha
+                              {isMobileView ? '✓' : 'Marcar como hecha'}
                             </button>
                           </div>
                         ) : (
                           <div className="status-badge missing">
-                            <AlertCircle size={14} />
-                            Faltan ingredientes
+                            <AlertCircle size={isMobileView ? 10 : 14} />
+                            {!isMobileView && 'Faltan ingredientes'}
                           </div>
                         )}
                       </div>
                       
-                      {meal.ingredients && meal.ingredients.length > 0 && (
+                      {meal.ingredients && meal.ingredients.length > 0 && !isMobileView && (
                         <div className="meal-ingredients">
                           <small>Ingredientes:</small>
                           <ul>
@@ -185,8 +218,13 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
                       )}
                     </div>
                   ) : (
-                    <div className="empty-meal-slot">
-                      <span>Sin planificar</span>
+                    <div 
+                      className="empty-meal-slot clickable" 
+                      onClick={() => handleEmptySlotClick(day, mealType)}
+                      title="Hacer clic para añadir comida"
+                    >
+                      <Plus size={isMobileView ? 12 : 16} className="add-icon" />
+                      {!isMobileView && <span>Añadir comida</span>}
                     </div>
                   )}
                 </div>
@@ -195,6 +233,16 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
           </React.Fragment>
         ))}
       </div>
+
+      {/* Modal para añadir comida */}
+      {showAddMealModal && (
+        <AddMealModal
+          selectedSlot={selectedSlot}
+          pantryItems={pantryItems}
+          onClose={handleCloseModal}
+          onRefresh={onRefresh}
+        />
+      )}
     </div>
   );
 };
