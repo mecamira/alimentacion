@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, X, Clock, ChefHat } from 'lucide-react';
 import { mealService } from '../services/firebaseService';
-import { createPortal } from 'react-dom';
 
 const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
   const [meal, setMeal] = useState({
@@ -132,7 +131,7 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
     });
   };
 
-  return createPortal(
+  return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -357,8 +356,7 @@ const AddMealModal = ({ selectedSlot, pantryItems, onClose, onRefresh }) => {
           </div>
         </form>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 };
 
