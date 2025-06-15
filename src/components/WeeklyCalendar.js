@@ -21,6 +21,75 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Renderizar vista móvil (lista por días)
+  const renderMobileView = () => {
+    return (
+      <div className="mobile-calendar">
+        {weekDays.map((day, dayIndex) => {
+          const dayMeals = getMealsForDay(day);
+          return (
+            <div key={day.toISOString()} className="mobile-day">
+              <div className="mobile-day-header">
+                <h3>{dayNames[dayIndex]}</h3>
+                <span className="mobile-day-date">{day.getDate()}</span>
+              </div>
+              
+              <div className="mobile-meals">
+                {mealTypes.map(mealType => {
+                  const meal = dayMeals.find(m => m.mealType === mealType);
+                  
+                  return (
+                    <div key={`${day.toISOString()}-${mealType}`} className="mobile-meal-row">
+                      <div className="mobile-meal-type">{mealType}</div>
+                      <div className="mobile-meal-content">
+                        {meal ? (
+                          <div className={`mobile-meal-card ${meal.completed ? 'completed' : ''}`}>
+                            <div className="mobile-meal-info">
+                              <span className="mobile-meal-name">{meal.name}</span>
+                              {meal.completed ? (
+                                <span className="mobile-status completed">
+                                  <CheckCircle size={14} /> Completada
+                                </span>
+                              ) : canCookMeal(meal) ? (
+                                <div className="mobile-meal-actions">
+                                  <span className="mobile-status ready">
+                                    <Clock size={14} /> Listo
+                                  </span>
+                                  <button 
+                                    onClick={() => handleCompleteMeal(meal.id, meal)}
+                                    className="mobile-complete-button"
+                                  >
+                                    ✓ Completar
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="mobile-status missing">
+                                  <AlertCircle size={14} /> Faltan ingredientes
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <button 
+                            className="mobile-add-meal-button"
+                            onClick={() => handleEmptySlotClick(day, mealType)}
+                          >
+                            <Plus size={16} />
+                            Añadir {mealType.toLowerCase()}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // Obtener el lunes de la semana actual
   const getWeekStart = (date) => {
     const d = new Date(date);
@@ -140,7 +209,9 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
         </div>
       </div>
 
-      <div className="calendar-grid">
+      {/* Vista móvil o desktop */}
+      {isMobileView ? renderMobileView() : (
+        <div className="calendar-grid">
         {/* Encabezados de días */}
         <div className="time-slot"></div>
         {weekDays.map((day, index) => (
@@ -233,6 +304,7 @@ const WeeklyCalendar = ({ meals, pantryItems, onRefresh }) => {
           </React.Fragment>
         ))}
       </div>
+      )}
 
       {/* Modal para añadir comida */}
       {showAddMealModal && (
